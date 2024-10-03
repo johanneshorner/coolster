@@ -1,22 +1,25 @@
 <script setup lang="ts">
-import HelloWorld from "./components/Game.vue";
+import Game from "./components/Game.vue";
+import {
+  setup_access_token,
+  request_user_authorization,
+} from "./spotify_web_api.ts";
+import { ref } from "vue";
+
+let access_token = ref<string | null>(null);
+setup_access_token().then((token) => (access_token.value = token));
 </script>
 
 <template>
-  <HelloWorld msg="Vite + Vue" />
+  <!-- only show this button when we don't have a valid access token yet -->
+  <button
+    type="button"
+    v-if="!access_token"
+    @click="request_user_authorization"
+  >
+    Request spotify access
+  </button>
+  <Game msg="Vite + Vue" />
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>
+<style scoped></style>
