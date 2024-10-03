@@ -1,10 +1,28 @@
 const CLIENT_ID = "cf04c7e7969443b1ae794f1c16aa0ce0";
 const REDIRECT_URI = window.location.origin;
 
+const is_token_expired = () => {
+  const expiry_time = parseInt(localStorage.getItem("expiry-time")!);
+  return expiry_time < Date.now();
+};
+
 export async function setup_access_token(): Promise<string | null> {
   if (!window.location.search) {
-    // TODO If the token exists validate it by issuing some request to spotify
-    return localStorage.getItem("access-token");
+    const access_token = localStorage.getItem("access-token");
+    if (!access_token) {
+      return null;
+    }
+
+    if (!is_token_expired()) {
+      return access_token;
+    }
+
+    try {
+      return await refresh_access_token();
+    } catch (e) {
+      console.log(`cannot refresh access token: ${e}`);
+      return null;
+    }
   }
 
   const params = new URLSearchParams(window.location.search);
@@ -88,4 +106,33 @@ export async function request_user_authorization() {
   let auth_url = new URL("https://accounts.spotify.com/authorize");
   auth_url.search = new URLSearchParams(params).toString();
   window.location.href = auth_url.toString();
+}
+
+export async function refresh_access_token(): Promise<string> {
+  const refresh_token = localStorage.getItem("refresh-token");
+  if (!refresh_token) {
+    throw new Error("no refresh-token in local storage");
+  }
+
+  const token_url = "https://accounts.spotify.com/api/token";
+  const response = await fetch(token_url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      client_id: CLIENT_ID,
+      grant_type: "refresh_token",
+      refresh_token,
+    }),
+  });
+
+  const json = await response.json();
+  localStorage.setItem("access-token", json.access_token);
+  if (json.refresh_token)
+    localStorage.setItem("refresh-token", json.refresh_token);
+  const expiry_time_in_millis = Date.now() + json.expires_in * 1000;
+  localStorage.setItem("expiry-time", expiry_time_in_millis.toString());
+
+  return json.access_token;
 }
