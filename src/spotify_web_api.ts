@@ -1,6 +1,13 @@
 const CLIENT_ID = "cf04c7e7969443b1ae794f1c16aa0ce0";
 const REDIRECT_URI = window.location.origin;
 
+export async function get_or_refresh_access_token() {
+  if (!is_token_expired()) {
+    return localStorage.getItem("access-token")!;
+  }
+  return await refresh_access_token();
+}
+
 const is_token_expired = () => {
   const expiry_time = parseInt(localStorage.getItem("expiry-time")!);
   return expiry_time < Date.now();
@@ -135,4 +142,59 @@ export async function refresh_access_token(): Promise<string> {
   localStorage.setItem("expiry-time", expiry_time_in_millis.toString());
 
   return json.access_token;
+}
+
+export async function get_track(track_id: string) {
+  const url = `https://api.spotify.com/v1/tracks/${track_id}`;
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("access-token")}`,
+    },
+  });
+  return response.json();
+}
+
+export async function toggle_playback_shuffle(state: boolean) {
+  const url =
+    "https://api.spotify.com/v1/me/player/shuffle?" +
+    new URLSearchParams({ state: state.toString() }).toString();
+  await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("access-token")}`,
+    },
+  });
+}
+
+export async function start_playback(device_id: string, uri: string) {
+  const url =
+    "https://api.spotify.com/v1/me/player/play?" +
+    new URLSearchParams({ device_id }).toString();
+  await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("access-token")}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      context_uri: uri,
+      position_ms: 0,
+    }),
+  });
+}
+
+export async function transfer_playback(device_id: string, play: boolean) {
+  const url = "https://api.spotify.com/v1/me/player";
+  await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("access-token")}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      device_ids: [device_id],
+      play,
+    }),
+  });
 }

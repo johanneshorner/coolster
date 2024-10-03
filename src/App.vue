@@ -4,27 +4,24 @@ import {
   setup_access_token,
   request_user_authorization,
 } from "./spotify_web_api.ts";
-import { ref, onMounted } from "vue";
+import { ref, useTemplateRef } from "vue";
 
-let request_user_authorization_dialog: HTMLDialogElement | null = null;
-onMounted(() => {
-  request_user_authorization_dialog = document.getElementById(
-    "request-user-authorization-dialog",
-  )! as HTMLDialogElement;
-});
+const request_user_authorization_dialog = useTemplateRef<HTMLDialogElement>(
+  "request-user-authorization-dialog",
+);
 
 let access_token = ref<string | null>(null);
 setup_access_token().then((token) => {
   if (token) {
     access_token.value = token;
   } else {
-    request_user_authorization_dialog!.showModal();
+    request_user_authorization_dialog.value!.showModal();
   }
 });
 </script>
 
 <template>
-  <dialog id="request-user-authorization-dialog">
+  <dialog ref="request-user-authorization-dialog">
     <p>
       For this game to work you need to grant access to your spotify account. Do
       you want to be redirected to the spotify authentication page?
@@ -36,7 +33,10 @@ setup_access_token().then((token) => {
       <button type="button" @click="request_user_authorization">Confirm</button>
     </div>
   </dialog>
-  <Game msg="Vite + Vue" />
+  <Suspense>
+    <Game />
+    <template #fallback> Loading Game... </template>
+  </Suspense>
 </template>
 
 <style scoped></style>
