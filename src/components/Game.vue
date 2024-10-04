@@ -1,23 +1,14 @@
-The rotating image is very hackily done. The animations initial direction is set
-to reverse so that the first .reverse() call actually starts in the correct
-direction. Once the component is mounted we immediately call .finish() on the
-animation so that the first "reversed" animation is not seen.
-
 <script setup lang="ts">
-import { ref, computed, useTemplateRef, onMounted } from "vue";
+import { ref, computed, useTemplateRef } from "vue";
 import { setup_player } from "./spotify_web_playback_sdk";
 import { get_track } from "../spotify_web_api";
+import TwoSidedImage, { State } from "./TwoSidedImage.vue";
+import front_img from "../assets/vinyl-640x640.jpg";
+
+type TwoSidedImageType = InstanceType<typeof TwoSidedImage>;
 
 const spotify_uri_input = useTemplateRef<HTMLInputElement>("spotify-uri-input");
-const rotating_box_div = useTemplateRef<HTMLDivElement>("rotating-box-div");
-
-let rotate_animation: Animation | null = null;
-onMounted(() => {
-  rotate_animation = rotating_box_div
-    .value!.getAnimations()
-    .find((a) => (a as CSSAnimation).animationName.includes("cover-reveal"))!;
-  rotate_animation.finish();
-});
+const album_cover = useTemplateRef<TwoSidedImageType>("album-cover");
 
 const is_revealed = ref(false);
 const current_track_information = ref<any | null>(null);
@@ -28,6 +19,7 @@ const current_track_artists = computed(() => {
 });
 
 let previous_state: any | null = null;
+let buffered_track_information: any | null = null;
 const player = await setup_player((state) => {
   if (
     previous_state &&
@@ -40,41 +32,29 @@ const player = await setup_player((state) => {
   }
 
   get_track(state.track_window.current_track.id).then((json) => {
-    const animations = rotating_box_div.value?.getAnimations();
-    console.log(animations);
-    if (is_revealed.value) {
-      rotating_box_div.value!.addEventListener(
-        "transitionend",
-        () => {
-          current_track_information.value = json;
-        },
-        { once: true },
-      );
-      is_revealed.value = false;
-    } else {
+    is_revealed.value = false;
+    if (album_cover.value!.state() === State.Front) {
       current_track_information.value = json;
+      buffered_track_information = null;
+    } else {
+      buffered_track_information = json;
     }
   });
 });
 
-const next_track = () => {
-  toggle_reveal();
-  player.next_track();
-};
-
-const toggle_reveal = () => {
-  if (is_revealed.value) {
-    is_revealed.value = false;
-  } else {
-    rotating_box_div.value!.addEventListener(
-      "animationend",
-      () => (is_revealed.value = !is_revealed.value),
-      {
-        once: true,
-      },
-    );
+const album_cover_state_changed = (state: State) => {
+  switch (state) {
+    case State.Front:
+    case State.Back:
+    case State.BackPending:
+      if (buffered_track_information) {
+        current_track_information.value = buffered_track_information;
+        buffered_track_information = null;
+      }
+      break;
+    default:
+      break;
   }
-  rotate_animation!.reverse();
 };
 </script>
 
@@ -88,16 +68,15 @@ const toggle_reveal = () => {
       Start
     </button>
   </div>
-  <button type="button" @click="next_track">Next track</button>
-  <div class="reveal-container" @click="toggle_reveal">
-    <div ref="rotating-box-div" class="rotating-box">
-      <img
-        class="reveal-img rotate-y-180"
-        :src="current_track_information?.album.images[0].url"
-      />
-      <img class="reveal-img album-cover" src="../assets/vinyl-640x640.jpg" />
-    </div>
-  </div>
+  <button type="button" @click="player.next_track">Next track</button>
+  <TwoSidedImage
+    @state-changed="album_cover_state_changed"
+    ref="album-cover"
+    @click="is_revealed = !is_revealed"
+    :rotated="is_revealed"
+    :front="front_img"
+    :back="current_track_information?.album.images[0].url"
+  />
   <ul>
     <li class="current-track-information" :class="{ hidden: !is_revealed }">
       {{ current_track_information?.name }}
@@ -113,45 +92,6 @@ const toggle_reveal = () => {
 </template>
 
 <style scoped>
-.reveal-container {
-  position: relative;
-  perspective: 1000px;
-}
-
-.rotating-box {
-  transform-style: preserve-3d;
-  animation-duration: 1.5s;
-  animation-name: cover-reveal;
-  animation-fill-mode: both;
-  animation-direction: reverse;
-  display: flex;
-  justify-content: center;
-}
-
-@keyframes cover-reveal {
-  from {
-    transform: rotateY(0deg);
-  }
-
-  to {
-    transform: rotateY(180deg);
-  }
-}
-
-.reveal-img {
-  width: 60%;
-  backface-visibility: hidden;
-  border-radius: 20%;
-}
-
-.album-cover {
-  position: absolute;
-}
-
-.rotate-y-180 {
-  transform: rotateY(180deg);
-}
-
 .hidden {
   visibility: hidden;
 }
