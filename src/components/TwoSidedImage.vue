@@ -41,11 +41,11 @@ const set_state = (new_state: State) => {
   emit("state-changed", current_state);
 };
 
-const rotating_box_div = useTemplateRef<HTMLDivElement>("rotating-box-div");
+const rotating_box = useTemplateRef<HTMLDivElement>("rotating-box");
 
 let rotate_animation: Animation | null = null;
 onMounted(() => {
-  rotate_animation = rotating_box_div
+  rotate_animation = rotating_box
     .value!.getAnimations()
     .find((a) => (a as CSSAnimation).animationName.includes("rotate"))!;
   rotate_animation.addEventListener("finish", () => {
@@ -105,29 +105,27 @@ defineExpose({ toggle, show_front, show_back, state });
 </script>
 
 <template>
-  <div class="perspective">
-    <div ref="rotating-box-div" class="rotating-box">
-      <img class="image back" :src="back" />
-      <img class="image front" :src="front" />
+  <div id="perspective">
+    <div ref="rotating-box" id="rotating-box">
+      <img class="image" id="back" :src="back" />
+      <img class="image" id="front" :src="front" />
     </div>
   </div>
 </template>
 
 <style scoped>
-.perspective {
-  position: relative;
+#perspective {
   perspective: 1000px;
+  display: flex;
 }
 
-.rotating-box {
+#rotating-box {
   transform-style: preserve-3d;
   animation-duration: 1.5s;
   animation-name: rotate;
   animation-fill-mode: both;
   animation-direction: reverse;
-  /* TODO is this needed? */
-  display: flex;
-  justify-content: center;
+  display: grid;
 }
 
 @keyframes rotate {
@@ -141,16 +139,17 @@ defineExpose({ toggle, show_front, show_back, state });
 }
 
 .image {
-  width: 60%;
   backface-visibility: hidden;
   border-radius: 20%;
 }
 
-.front {
-  position: absolute;
+#front,
+#back {
+  grid-row: 1;
+  grid-column: 1;
 }
 
-.back {
+#back {
   transform: rotateY(180deg);
 }
 </style>

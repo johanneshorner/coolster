@@ -42,6 +42,8 @@ const player = await setup_player((state) => {
   });
 });
 
+// Sets the buffered track information once the two sided image is turned to the front again.
+// This ensure the album cover of the "next" is not loaded before the image is turned.
 const album_cover_state_changed = (state: State) => {
   switch (state) {
     case State.Front:
@@ -59,46 +61,64 @@ const album_cover_state_changed = (state: State) => {
 </script>
 
 <template>
-  <div>
-    <input ref="spotify-uri-input" type="text" placeholder="Spotify URI" />
-    <button
-      type="button"
-      @click="player.set_playlist(spotify_uri_input!.value)"
-    >
-      Start
-    </button>
+  <div id="container">
+    <div id="controls">
+      <div class="control">
+        <input ref="spotify-uri-input" type="text" placeholder="Spotify URI" />
+        <button
+          type="button"
+          @click="player.set_playlist(spotify_uri_input!.value)"
+        >
+          Start
+        </button>
+      </div>
+      <button class="control" type="button" @click="player.next_track">
+        Next track
+      </button>
+    </div>
+    <TwoSidedImage
+      @state-changed="album_cover_state_changed"
+      ref="album-cover"
+      @click="is_revealed = !is_revealed"
+      :rotated="is_revealed"
+      :front="front_img"
+      :back="current_track_information?.album.images[0].url"
+    />
+    <ul id="current-track-information">
+      <li :class="{ hidden: !is_revealed }">
+        {{ current_track_information?.name }}
+      </li>
+      <li :class="{ hidden: !is_revealed }">
+        {{ current_track_information?.album.release_date }}
+      </li>
+      <li :class="{ hidden: !is_revealed }">
+        {{ current_track_artists }}
+      </li>
+    </ul>
   </div>
-  <button type="button" @click="player.next_track">Next track</button>
-  <TwoSidedImage
-    @state-changed="album_cover_state_changed"
-    ref="album-cover"
-    @click="is_revealed = !is_revealed"
-    :rotated="is_revealed"
-    :front="front_img"
-    :back="current_track_information?.album.images[0].url"
-  />
-  <ul>
-    <li class="current-track-information" :class="{ hidden: !is_revealed }">
-      {{ current_track_information?.name }}
-    </li>
-    <li class="current-track-information" :class="{ hidden: !is_revealed }">
-      {{ current_track_information?.album.release_date }}
-    </li>
-    <li class="current-track-information" :class="{ hidden: !is_revealed }">
-      {{ current_track_artists }}
-    </li>
-  </ul>
-  <div ref="test-ref" class="box"></div>
 </template>
 
 <style scoped>
+#container {
+  display: flex;
+  flex-direction: column;
+}
+
+#controls {
+  width: 50%;
+}
+
+.control {
+  margin: 5px;
+}
+
 .hidden {
   visibility: hidden;
 }
 
-.current-track-information {
+#current-track-information {
   list-style-type: none;
-  margin: 5;
+  margin: 0;
   padding: 0;
   text-align: center;
   font-size: 20px;

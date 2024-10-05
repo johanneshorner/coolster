@@ -33,10 +33,17 @@ setup_access_token().then((token) => {
       <button type="button" @click="request_user_authorization">Confirm</button>
     </div>
   </dialog>
-  <Suspense>
-    <Game />
-    <template #fallback> Loading Game... </template>
-  </Suspense>
+  <div id="game">
+    <Suspense>
+      <Game />
+      <template #fallback> Loading Game... </template>
+    </Suspense>
+  </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+#game {
+  display: flex;
+  justify-content: center;
+}
+</style>
