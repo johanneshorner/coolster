@@ -1,6 +1,22 @@
 const CLIENT_ID = "cf04c7e7969443b1ae794f1c16aa0ce0";
 const REDIRECT_URI = window.location.origin;
 
+// Tests our access-token by issuing a request
+const test_access_token = async (access_token: string) => {
+  const url =
+    "https://api.spotify.com/v1/melody/v1/check_scope?" +
+    new URLSearchParams({ scope: "web-playback" }).toString();
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${access_token}`,
+    },
+  });
+  if (response.status === 401) {
+    throw new Error("access-token is invalid");
+  }
+};
+
 export async function get_or_refresh_access_token() {
   if (!is_token_expired()) {
     return localStorage.getItem("access-token")!;
@@ -21,6 +37,7 @@ export async function setup_access_token(): Promise<string | null> {
     }
 
     if (!is_token_expired()) {
+      await test_access_token(access_token);
       return access_token;
     }
 

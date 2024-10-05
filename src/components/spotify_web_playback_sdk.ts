@@ -65,7 +65,7 @@ export async function setup_player(on_state_change: (state: any) => void) {
           getOAuthToken: (cb) => {
             get_or_refresh_access_token()
               .then((access_token) => cb(access_token))
-              .catch((e) => console.log(`cannot refresh token: ${e}`));
+              .catch((e) => console.error(`cannot refresh token: ${e}`));
           },
           volume: 0.05,
         });
