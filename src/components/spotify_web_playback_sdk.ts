@@ -5,6 +5,9 @@ import {
   transfer_playback,
 } from "../spotify_web_api";
 
+const DEFAULT_PLAYLIST =
+  "https://open.spotify.com/playlist/37i9dQZF1DXbTxeAdrVG2l?si=5c0047d6e7bd4537";
+
 export class Player {
   inner: any;
   device_id: string;
@@ -16,7 +19,7 @@ export class Player {
 
   async set_playlist(spotify_uri: string) {
     await toggle_playback_shuffle(true);
-    await start_playback(this.device_id, spotify_uri);
+    await start_playback(this.device_id, spotify_uri || DEFAULT_PLAYLIST);
   }
 
   async toggle_play() {
