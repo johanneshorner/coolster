@@ -51,6 +51,25 @@ export class Player {
   }
 }
 
+declare global {
+  interface Window {
+    onSpotifyWebPlaybackSDKReady: () => void;
+    Spotify: {
+      Player: new (opts: {
+        name: string;
+        getOAuthToken: (cb: (token: string) => void) => void;
+        volume: number;
+      }) => Player;
+    };
+  }
+  interface Player {
+    addListener(event: string, cb: (opts: any) => void): void;
+    activateElement(): Promise<null>;
+    on(event: string, cb: (opts: any) => void): void;
+    connect(): void;
+  }
+}
+
 export async function setup_player(on_state_change: (state: any) => void) {
   const script = document.createElement("script");
   script.src = "https://sdk.scdn.co/spotify-player.js";
