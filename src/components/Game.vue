@@ -2,13 +2,10 @@
 import { ref, computed, useTemplateRef } from "vue";
 import { setup_player } from "./spotify_web_playback_sdk";
 import { get_track } from "../spotify_web_api";
-import TwoSidedImage, { State } from "./TwoSidedImage.vue";
+import RevealImage from "./RevealImage.vue";
 import front_img from "../assets/vinyl-640x640.jpg";
 
-type TwoSidedImageType = InstanceType<typeof TwoSidedImage>;
-
 const spotify_uri_input = useTemplateRef<HTMLInputElement>("spotify-uri-input");
-const album_cover = useTemplateRef<TwoSidedImageType>("album-cover");
 
 const is_revealed = ref(false);
 const current_track_information = ref<any | null>(null);
@@ -19,7 +16,6 @@ const current_track_artists = computed(() => {
 });
 
 let previous_state: any | null = null;
-let buffered_track_information: any | null = null;
 const player = await setup_player((state) => {
   if (
     previous_state &&
@@ -27,37 +23,15 @@ const player = await setup_player((state) => {
       state.track_window.current_track.id
   ) {
     return;
-  } else {
-    previous_state = state;
   }
+
+  previous_state = state;
 
   get_track(state.track_window.current_track.id).then((json) => {
     is_revealed.value = false;
-    if (album_cover.value!.state() === State.Front) {
-      current_track_information.value = json;
-      buffered_track_information = null;
-    } else {
-      buffered_track_information = json;
-    }
+    current_track_information.value = json;
   });
 });
-
-// Sets the buffered track information once the two sided image is turned to the front again.
-// This ensure the album cover of the "next" is not loaded before the image is turned.
-const album_cover_state_changed = (state: State) => {
-  switch (state) {
-    case State.Front:
-    case State.Back:
-    case State.BackPending:
-      if (buffered_track_information) {
-        current_track_information.value = buffered_track_information;
-        buffered_track_information = null;
-      }
-      break;
-    default:
-      break;
-  }
-};
 </script>
 
 <template>
@@ -76,8 +50,7 @@ const album_cover_state_changed = (state: State) => {
         Next track
       </button>
     </div>
-    <TwoSidedImage
-      @state-changed="album_cover_state_changed"
+    <RevealImage
       ref="album-cover"
       @click="is_revealed = !is_revealed"
       :rotated="is_revealed"

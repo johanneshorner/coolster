@@ -13,7 +13,7 @@ export enum State {
 </script>
 
 <script setup lang="ts">
-import { useTemplateRef, onMounted, watch } from "vue";
+import { useTemplateRef, onMounted, watch, ref } from "vue";
 
 const props = defineProps<{
   front: string;
@@ -23,6 +23,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   "state-changed": [state: State];
 }>();
+
+const delayed_back = ref("");
 
 watch(
   () => props.rotated,
@@ -45,6 +47,7 @@ const rotating_box = useTemplateRef<HTMLDivElement>("rotating-box");
 
 let rotate_animation: Animation | null = null;
 onMounted(() => {
+  delayed_back.value = props.back;
   rotate_animation = rotating_box
     .value!.getAnimations()
     .find((a) => (a as CSSAnimation).animationName.includes("rotate"))!;
@@ -63,6 +66,18 @@ onMounted(() => {
     }
   });
   rotate_animation.finish();
+
+  watch(
+    () => props.back,
+    async (new_back) => {
+      if (current_state !== State.Front) {
+        await new Promise((r) =>
+          rotate_animation!.addEventListener("finish", r, { once: true }),
+        );
+      }
+      delayed_back.value = new_back;
+    },
+  );
 });
 
 const toggle = () => {
@@ -107,7 +122,7 @@ defineExpose({ toggle, show_front, show_back, state });
 <template>
   <div id="perspective">
     <div ref="rotating-box" id="rotating-box">
-      <img class="image" id="back" :src="back" />
+      <img class="image" id="back" :src="delayed_back" />
       <img class="image" id="front" :src="front" />
     </div>
   </div>
