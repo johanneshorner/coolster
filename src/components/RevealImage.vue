@@ -156,6 +156,7 @@ defineExpose({ toggle, show_front, show_back, state });
 .image {
   backface-visibility: hidden;
   border-radius: 20%;
+  width: 100%;
 }
 
 #front,

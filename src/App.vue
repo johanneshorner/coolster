@@ -32,16 +32,21 @@ onMounted(() => {
 </script>
 
 <template>
-  <dialog ref="request-user-authorization-dialog">
-    <p ref="dialog-text"></p>
-    <div>
-      <button type="button" @click="request_user_authorization_dialog!.close()">
-        Cancel
-      </button>
-      <button type="button" @click="request_user_authorization">Confirm</button>
-    </div>
-  </dialog>
-  <div id="game">
+  <div id="container">
+    <dialog ref="request-user-authorization-dialog">
+      <p ref="dialog-text"></p>
+      <div>
+        <button
+          type="button"
+          @click="request_user_authorization_dialog!.close()"
+        >
+          Cancel
+        </button>
+        <button type="button" @click="request_user_authorization">
+          Confirm
+        </button>
+      </div>
+    </dialog>
     <Suspense>
       <Game />
       <template #fallback> Loading Game... </template>
@@ -50,7 +55,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-#game {
+#container {
   display: flex;
   justify-content: center;
 }
