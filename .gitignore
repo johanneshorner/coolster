@@ -24,6 +24,3 @@ dist-ssr
 *.sw?
 
 *.tsbuildinfo
-
-# Manually added
-/.direnv
